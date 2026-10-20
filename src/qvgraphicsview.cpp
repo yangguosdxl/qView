@@ -13,6 +13,8 @@
 #include <QtMath>
 #include <QGestureEvent>
 #include <QScrollBar>
+#include <QPainter>
+#include <QPaintEvent>
 
 QVGraphicsView::QVGraphicsView(QWidget *parent) : QGraphicsView(parent)
 {
@@ -76,6 +78,41 @@ void QVGraphicsView::resizeEvent(QResizeEvent *event)
         centerOn(loadedPixmapItem);
 }
 
+void QVGraphicsView::paintEvent(QPaintEvent *event)
+{
+    QGraphicsView::paintEvent(event);
+
+    if (!overviewEnabled())
+        return;
+
+    // 在主视图上方绘制缩略图和当前可视区域，便于用户快速定位大图。
+    const QRectF panel = overviewRect();
+    const QRectF imageRect = loadedPixmapItem->sceneBoundingRect();
+    QPainter painter(viewport());
+    painter.setRenderHint(QPainter::SmoothPixmapTransform);
+    painter.setPen(QPen(QColor(255, 255, 255, 180), 1));
+    painter.setBrush(QColor(20, 20, 20, 210));
+    painter.drawRoundedRect(panel, 6, 6);
+
+    const QPixmap source = loadedPixmapItem->pixmap();
+    if (source.isNull())
+        return;
+    const QRectF thumbnail = panel.adjusted(6, 6, -6, -6);
+    painter.drawPixmap(thumbnail, source, source.rect());
+
+    const QRectF visible = mapToScene(viewport()->rect()).boundingRect().intersected(imageRect);
+    if (!visible.isEmpty()) {
+        const qreal sx = thumbnail.width() / imageRect.width();
+        const qreal sy = thumbnail.height() / imageRect.height();
+        const QRectF indicator(thumbnail.left() + (visible.left() - imageRect.left()) * sx,
+                               thumbnail.top() + (visible.top() - imageRect.top()) * sy,
+                               visible.width() * sx, visible.height() * sy);
+        painter.setBrush(QColor(80, 160, 255, 70));
+        painter.setPen(QPen(QColor(120, 200, 255, 230), 2));
+        painter.drawRect(indicator.intersected(thumbnail));
+    }
+}
+
 void QVGraphicsView::dropEvent(QDropEvent *event)
 {
     QGraphicsView::dropEvent(event);
@@ -114,6 +151,14 @@ void QVGraphicsView::enterEvent(QEnterEvent *event)
 
 void QVGraphicsView::mousePressEvent(QMouseEvent *event)
 {
+    if (event->button() == Qt::LeftButton && overviewEnabled()
+        && overviewRect().contains(event->pos())) {
+        overviewDragging = true;
+        navigateFromOverview(event->pos());
+        event->accept();
+        return;
+    }
+
     const auto startWindowMove = [this, event]() {
 #ifdef COCOA_LOADED
         return QVCocoaFunctions::startSystemMove(window());
@@ -170,6 +215,12 @@ void QVGraphicsView::mousePressEvent(QMouseEvent *event)
 
 void QVGraphicsView::mouseMoveEvent(QMouseEvent *event)
 {
+    if (overviewDragging) {
+        navigateFromOverview(event->pos());
+        event->accept();
+        return;
+    }
+
     if (mousePressButton == Qt::LeftButton) {
         if (mousePressModifiers.testFlag(Qt::ControlModifier)
             && !event->modifiers().testFlag(Qt::ControlModifier)) {
@@ -189,10 +240,47 @@ void QVGraphicsView::mouseMoveEvent(QMouseEvent *event)
 
 void QVGraphicsView::mouseReleaseEvent(QMouseEvent *event)
 {
+    overviewDragging = false;
     mousePressButton = Qt::NoButton;
     mousePressModifiers = Qt::NoModifier;
     QGraphicsView::mouseReleaseEvent(event);
     viewport()->setCursor(Qt::ArrowCursor);
+}
+
+bool QVGraphicsView::overviewEnabled() const
+{
+    if (!getCurrentFileDetails().isPixmapLoaded || loadedPixmapItem->pixmap().isNull())
+        return false;
+    const QRectF imageRect = loadedPixmapItem->sceneBoundingRect();
+    const qreal scaleX = qAbs(transform().m11());
+    const qreal scaleY = qAbs(transform().m22());
+    if (qFuzzyIsNull(scaleX) || qFuzzyIsNull(scaleY))
+        return false;
+    return imageRect.width() > viewport()->width() / scaleX
+            || imageRect.height() > viewport()->height() / scaleY;
+}
+
+QRectF QVGraphicsView::overviewRect() const
+{
+    const QSizeF imageSize = loadedPixmapItem->sceneBoundingRect().size();
+    const qreal scale = qMin(180.0 / imageSize.width(), 130.0 / imageSize.height());
+    const QSizeF size = imageSize * scale;
+    return QRectF(viewport()->width() - size.width() - 18,
+                  viewport()->height() - size.height() - 18, size.width() + 12,
+                  size.height() + 12);
+}
+
+void QVGraphicsView::navigateFromOverview(const QPoint &position)
+{
+    const QRectF panel = overviewRect();
+    const QRectF thumbnail = panel.adjusted(6, 6, -6, -6);
+    const QRectF imageRect = loadedPixmapItem->sceneBoundingRect();
+    const QPointF ratio((position.x() - thumbnail.left()) / thumbnail.width(),
+                        (position.y() - thumbnail.top()) / thumbnail.height());
+    const QPointF target(imageRect.left() + qBound(0.0, ratio.x(), 1.0) * imageRect.width(),
+                         imageRect.top() + qBound(0.0, ratio.y(), 1.0) * imageRect.height());
+    centerOn(target);
+    viewport()->update();
 }
 
 bool QVGraphicsView::event(QEvent *event)

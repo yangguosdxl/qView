@@ -67,6 +67,8 @@ signals:
 protected:
     void wheelEvent(QWheelEvent *event) override;
 
+    void paintEvent(QPaintEvent *event) override;
+
     void resizeEvent(QResizeEvent *event) override;
 
     void dropEvent(QDropEvent *event) override;
@@ -108,6 +110,10 @@ private slots:
     void updateLoadedPixmapItem();
 
 private:
+    QRectF overviewRect() const;
+    bool overviewEnabled() const;
+    void navigateFromOverview(const QPoint &position);
+
     void updateFilteringMode();
 
     QGraphicsPixmapItem *loadedPixmapItem;
@@ -136,5 +142,6 @@ private:
     Qt::MouseButton mousePressButton;
     Qt::KeyboardModifiers mousePressModifiers;
     QPoint mousePressPosition;
+    bool overviewDragging = false;
 };
 #endif // QVGRAPHICSVIEW_H
