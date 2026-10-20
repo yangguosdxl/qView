@@ -78,7 +78,7 @@ Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChang
 [Registry]
 ; Key that specifies exe path to file associations
 Root: HKA; Subkey: "SOFTWARE\Classes\{#MyAppName}.1"; Flags: uninsdeletekey; Tasks: fileassociation
-Root: HKA; Subkey: "SOFTWARE\Classes\{#MyAppName}.1\shell\open\command"; ValueType: string; ValueData: """{app}\{#MyAppExeName}"" ""%1""""; Tasks: fileassociation
+Root: HKA; Subkey: "SOFTWARE\Classes\{#MyAppName}.1\shell\open\command"; ValueType: string; ValueData: """{app}\{#MyAppExeName}"" ""%1"""; Tasks: fileassociation
 
 ; File associations that point to the above key
 Root: HKA; Subkey: "SOFTWARE\Classes\.bmp\OpenWithProgids"; ValueType: string; ValueName: "{#MyAppName}.1"; ValueData: ""; Flags: uninsdeletevalue; Tasks: fileassociation
@@ -120,7 +120,7 @@ Root: HKA; Subkey: "SOFTWARE\Classes\.pcx\OpenWithProgids"; ValueType: string; V
 Root: HKA; Subkey: "SOFTWARE\Classes\.pic\OpenWithProgids"; ValueType: string; ValueName: "{#MyAppName}.1"; ValueData: ""; Flags: uninsdeletevalue; Tasks: fileassociation
 Root: HKA; Subkey: "SOFTWARE\Classes\.psd\OpenWithProgids"; ValueType: string; ValueName: "{#MyAppName}.1"; ValueData: ""; Flags: uninsdeletevalue; Tasks: fileassociation
 Root: HKA; Subkey: "SOFTWARE\Classes\.ras\OpenWithProgids"; ValueType: string; ValueName: "{#MyAppName}.1"; ValueData: ""; Flags: uninsdeletevalue; Tasks: fileassociation
-Root: HKA; Subkey. Subkey: "SOFTWARE\Classes\.rgb\OpenWithProgids"; ValueType: string; ValueName: "{#MyAppName}.1"; ValueData: ""; Flags: uninsdeletevalue; Tasks: fileassociation
+Root: HKA; Subkey: "SOFTWARE\Classes\.rgb\OpenWithProgids"; ValueType: string; ValueName: "{#MyAppName}.1"; ValueData: ""; Flags: uninsdeletevalue; Tasks: fileassociation
 Root: HKA; Subkey: "SOFTWARE\Classes\.rgba\OpenWithProgids"; ValueType: string; ValueName: "{#MyAppName}.1"; ValueData: ""; Flags: uninsdeletevalue; Tasks: fileassociation
 Root: HKA; Subkey: "SOFTWARE\Classes\.sgi\OpenWithProgids"; ValueType: string; ValueName: "{#MyAppName}.1"; ValueData: ""; Flags: uninsdeletevalue; Tasks: fileassociation
 Root: HKA; Subkey: "SOFTWARE\Classes\.tga\OpenWithProgids"; ValueType: string; ValueName: "{#MyAppName}.1"; ValueData: ""; Flags: uninsdeletevalue; Tasks: fileassociation
